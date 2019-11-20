@@ -2,6 +2,11 @@ const dialogflow = require('dialogflow');
 const uuid = require('uuid');
 const fs = require('fs');
 
+const intentMap = require('../../modules/dialogflow/intentMap');
+// const greeting = require('../../modules/dialogflow/intent/greeting')
+ 
+
+
 class Dialogflow {
     constructor (projectId, keyFile) {
         // initialization
@@ -20,13 +25,14 @@ class Dialogflow {
         };
     };
 
-    async detectTextIntent(queryTxt, sessionId) {
+    async detectTextIntent(queryTxt) {
         // check queryTxt length
         if (!queryTxt || !queryTxt.length) return "No have message"      
 
         // Create a new session
         const sessionClient = new dialogflow.SessionsClient();
-        // session pathconst sessionId = uuid.v4();
+        // session path
+        const sessionId = uuid.v4();
         const sessionPath = sessionClient.sessionPath(this.projectId, sessionId);
 
         // query request
@@ -48,20 +54,26 @@ class Dialogflow {
             const result = responses[0].queryResult;
             console.log(`  Query: ${result.queryText}`);    // log query
             console.log(`  Response: ${result.fulfillmentText}`);   // log response
-            if (result.intent) console.log(`  Intent: ${result.intent.displayName}`);
-            else console.log(`  No intent matched.`);
-            return result
+
+            if (!result.intent) {
+                console.log(`  No intent matched.`);
+            }
+            console.log(`  Intent: ${result.intent.displayName}`);
+            
+            const intentResult = intentMap.get(result.intent.displayName);
+            
+
+            if(intentResult === undefined) {
+                console.log(`err: no have intent`);
+                
+            }
+            return intentResult(responses)
+
         
         } catch(err) {
             console.log('ERROR:', err);
 	        response.status(500).json = {Error: err};
-        }
-
-
-        
-        
-        
+        }       
     }
 }
-
 module.exports = Dialogflow;
